@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0d0a0c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Ostatnia Wieża">
+<title>Ostatnia Wieża</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Alegreya+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="game">
+  <canvas id="cv"></canvas>
+
+  <!-- HUD -->
+  <div id="hud" class="hidden">
+    <div id="topbar">
+      <div id="waveBox"><span class="lbl">FALA</span><span id="waveNum">1</span></div>
+      <div id="xpWrap">
+        <div id="xpBar"><div id="xpFill"></div></div>
+        <div id="lvlTxt">Poziom 1</div>
+      </div>
+      <button id="pauseBtn" aria-label="Pauza">❚❚</button>
+    </div>
+    <div id="bossBar" class="hidden">
+      <div id="bossName">BOSS</div>
+      <div id="bossHp"><div id="bossHpFill"></div></div>
+    </div>
+    <button id="skillBtn" aria-label="Deszcz strzał">
+      <span class="ico">☄</span>
+      <span class="cd" id="skillCd"></span>
+      <svg viewBox="0 0 100 100"><circle id="skillRing" cx="50" cy="50" r="46"/></svg>
+    </button>
+    <div id="hint">Przytrzymaj palec, żeby celować</div>
+  </div>
+
+  <!-- Menu -->
+  <div id="menu" class="screen">
+    <div class="menuInner">
+      <div class="logoSmall">✠</div>
+      <h1>Ostatnia<br>Wieża</h1>
+      <p class="tag">Utrzymaj wieżę. Przetrwaj noc, która nie ma końca.</p>
+      <button class="btn big" id="playBtn">Graj</button>
+      <div class="stats" id="menuStats"></div>
+      <p class="tiny">Wersja prototypowa 0.1</p>
+    </div>
+  </div>
+
+  <!-- Wybór klasy -->
+  <div id="classScreen" class="screen hidden">
+    <h2>Wybierz bohatera</h2>
+    <div id="classList"></div>
+    <button class="btn ghost" id="classBack">Wróć</button>
+  </div>
+
+  <!-- Wybór kart (level up / błogosławieństwo) -->
+  <div id="cardScreen" class="screen hidden dim">
+    <h2 id="cardTitle">Nowy poziom!</h2>
+    <p id="cardSub" class="sub"></p>
+    <div id="cards"></div>
+    <button class="btn ghost small" id="rerollBtn">Przelosuj (<span id="rerollN">2</span>)</button>
+  </div>
+
+  <!-- Pauza -->
+  <div id="pauseScreen" class="screen hidden dim">
+    <h2>Pauza</h2>
+    <div id="buildList"></div>
+    <button class="btn" id="resumeBtn">Wznów</button>
+    <button class="btn ghost" id="soundBtn">Dźwięk: wł.</button>
+    <button class="btn ghost" id="quitBtn">Zakończ rozgrywkę</button>
+  </div>
+
+  <!-- Koniec gry -->
+  <div id="overScreen" class="screen hidden dim">
+    <h2 class="blood">Wieża upadła</h2>
+    <div id="overStats"></div>
+    <button class="btn big" id="againBtn">Jeszcze raz</button>
+    <button class="btn ghost" id="menuBtn">Menu</button>
+  </div>
+</div>
+<script src="data.js"></script>
+<script src="audio.js"></script>
+<script src="render.js"></script>
+<script src="game.js"></script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+</script>
+</body>
+</html>
