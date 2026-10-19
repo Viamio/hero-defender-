@@ -1,6 +1,6 @@
 // Service worker: gra działa offline po pierwszym uruchomieniu.
 // Przy każdej aktualizacji gry zwiększ numer wersji, żeby telefon pobrał nowe pliki.
-const VERSION = 'ow-v1';
+const VERSION = 'ow-v2';
 const FILES = [
   './', 'index.html', 'style.css', 'data.js', 'audio.js', 'render.js', 'game.js', 'manifest.json',
   'icons/icon-192.png', 'icons/icon-512.png',

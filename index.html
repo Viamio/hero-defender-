@@ -28,6 +28,7 @@
       <div id="xpWrap">
         <div id="xpBar"><div id="xpFill"></div></div>
         <div id="lvlTxt">Poziom 1</div>
+        <div id="hpRow"><span class="heart">❤</span><div id="hpBar"><div id="hpFill"></div></div><span id="hpTxt"></span></div>
       </div>
       <button id="pauseBtn" aria-label="Pauza">❚❚</button>
     </div>
@@ -40,7 +41,7 @@
       <span class="cd" id="skillCd"></span>
       <svg viewBox="0 0 100 100"><circle id="skillRing" cx="50" cy="50" r="46"/></svg>
     </button>
-    <div id="hint">Przytrzymaj palec, żeby celować</div>
+    <div id="hint">Przesuń palcem, żeby chodzić<br><small>Bohater sam atakuje najbliższych wrogów</small></div>
   </div>
 
   <!-- Menu -->
@@ -48,10 +49,10 @@
     <div class="menuInner">
       <div class="logoSmall">✠</div>
       <h1>Ostatnia<br>Wieża</h1>
-      <p class="tag">Utrzymaj wieżę. Przetrwaj noc, która nie ma końca.</p>
+      <p class="tag">Przetrwaj noc, która nie ma końca.</p>
       <button class="btn big" id="playBtn">Graj</button>
       <div class="stats" id="menuStats"></div>
-      <p class="tiny">Wersja prototypowa 0.1</p>
+      <p class="tiny">Wersja prototypowa 0.2</p>
     </div>
   </div>
 
@@ -81,7 +82,7 @@
 
   <!-- Koniec gry -->
   <div id="overScreen" class="screen hidden dim">
-    <h2 class="blood">Wieża upadła</h2>
+    <h2 class="blood">Poległeś</h2>
     <div id="overStats"></div>
     <button class="btn big" id="againBtn">Jeszcze raz</button>
     <button class="btn ghost" id="menuBtn">Menu</button>

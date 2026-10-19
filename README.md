@@ -1,14 +1,16 @@
 # Ostatnia Wieża
 
-Mroczna gra roguelike na telefon. Bronisz wieży przed nieskończonymi falami potworów, a łucznik na jej szczycie strzela tam, gdzie trzymasz palec.
+Mroczna gra roguelike na telefon. Chodzisz łucznikiem po nieskończonym cmentarzysku, a on sam atakuje najbliższe potwory. Przetrwaj jak najwięcej fal.
 
 **Zagraj:** https://viamio.github.io/Wie-a-niesko-czono-ci-/
 
 ## Jak grać
 
-- **Przytrzymaj palec** na ekranie, a bohater strzela w to miejsce. Puścisz, to strzela sam do najbliższego wroga (trochę wolniej).
-- **Przycisk w prawym dolnym rogu** to umiejętność *Deszcz Strzał*.
-- Zabici wrogowie dają doświadczenie. Na każdym poziomie wybierasz **1 z 3 kart**.
+- **Dotknij ekranu w dowolnym miejscu i przesuń palec**, a bohater idzie w tę stronę (joystick pojawia się pod palcem). Na komputerze: WASD lub strzałki.
+- Bohater **sam atakuje najbliższego wroga**.
+- **Przycisk w prawym dolnym rogu** (lub spacja) to umiejętność *Deszcz Strzał*.
+- Zabici wrogowie zostawiają **niebieskie kryształy**. Podejdź, żeby je zebrać. Na każdym poziomie wybierasz **1 z 3 kart**.
+- Czasem wypada **serce** (leczy) albo **magnes** (przyciąga wszystkie kryształy).
 - Co 5 fal do walki dołącza **boss**. Za pokonanie bossa lub elity dostajesz skrzynię z lepszą kartą.
 
 ## Instalacja na telefonie
@@ -23,7 +25,7 @@ Po pierwszym uruchomieniu gra działa także bez internetu.
 
 Rzadkości: pospolita 84%, rzadka 10%, epicka 5%, legendarna 1%. Rzadsza karta to ta sama karta, ale mocniejsza.
 
-Rodzaje kart: statystyki, modyfikatory ataku, żywioły, wieżyczki (dobudowują się do wieży), towarzysze, efekty przy zabiciu, obrona, klątwy (ryzyko za nagrodę), **synergie** (pojawiają się przy konkretnych parach kart) i **ewolucje** (legendarne połączenia).
+Rodzaje kart: statystyki, modyfikatory ataku, żywioły, bronie (kusza, miotacz ognia, wirujące ostrza, garnce smoły), towarzysze, efekty przy zabiciu, obrona, klątwy (ryzyko za nagrodę), **synergie** (pojawiają się przy konkretnych parach kart) i **ewolucje** (legendarne połączenia).
 
 ## Pliki
 

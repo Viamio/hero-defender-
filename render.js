@@ -3,100 +3,142 @@
    Grafika – wszystko rysowane kodem (canvas 2D), bez plików graficznych.
    ===================================================================== */
 
-const TOWER_R = 96;                                   // promień murów (kolizja)
-const SLOT_ANG = [-160, -125, -55, -20, 160, 20].map(d => d * Math.PI / 180);
-const SLOT_R = 84;
 const TAU = Math.PI * 2;
 
-let bgCanvas = null, towerCanvas = null;
 
 function rng(seed) { // deterministyczny los dla tła
   let s = seed >>> 0;
   return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
 }
 
-/* ---------------- Tło ---------------- */
-function buildBackground(W, H, k) {
+/* ---------------- Ziemia (nieskończona, kafelkowa) ---------------- */
+const TILE = 512;
+let groundTile = null, groundPattern = null;
+const chunkCache = new Map();
+let chunkK = 1;
+
+function buildGround(k) {
+  chunkK = k; chunkCache.clear(); spriteK = k; spriteCache.clear();
   const c = document.createElement('canvas');
-  c.width = Math.round(W * k); c.height = Math.round(H * k);
+  c.width = c.height = Math.round(TILE * k);
   const g = c.getContext('2d');
   g.scale(k, k);
   const R = rng(1337);
-
-  // ziemia
-  const grd = g.createLinearGradient(0, 0, 0, H);
-  grd.addColorStop(0, '#120c0e'); grd.addColorStop(0.5, '#1c1416'); grd.addColorStop(1, '#231a1a');
-  g.fillStyle = grd; g.fillRect(0, 0, W, H);
-
-  // plamy ziemi
-  for (let i = 0; i < 260; i++) {
-    const x = R() * W, y = R() * H, r = 6 + R() * 40;
-    g.fillStyle = `rgba(${40 + R() * 30 | 0},${28 + R() * 18 | 0},${28 + R() * 14 | 0},${0.12 + R() * 0.15})`;
-    g.beginPath(); g.ellipse(x, y, r, r * 0.6, R() * 3, 0, TAU); g.fill();
-  }
-
-  // brukowana droga do wieży (od góry)
-  const tx = W / 2, ty = H - 200;
-  for (let y = -20; y < ty + 40; y += 15) {
-    const t = y / ty;
-    const half = 70 + t * 70;
-    for (let x = tx - half; x < tx + half; x += 19 + R() * 6) {
-      const ox = (R() - 0.5) * 4, oy = (R() - 0.5) * 4;
-      const w = 15 + R() * 6, h = 10 + R() * 3;
-      const v = 30 + R() * 16 | 0;
-      g.fillStyle = `rgb(${v},${v - 6},${v - 4})`;
-      roundRect(g, x + ox, y + oy, w, h, 3); g.fill();
-      g.fillStyle = 'rgba(0,0,0,.45)';
-      g.fillRect(x + ox, y + oy + h - 2, w, 2);
+  g.fillStyle = '#1b1416'; g.fillRect(0, 0, TILE, TILE);
+  // plamy ziemi (zawijane na krawędziach, żeby kafel był bez szwów)
+  const blob = (x, y, rx, ry, rot, col) => {
+    for (const ox of [-TILE, 0, TILE]) for (const oy of [-TILE, 0, TILE]) {
+      g.fillStyle = col; g.beginPath(); g.ellipse(x + ox, y + oy, rx, ry, rot, 0, TAU); g.fill();
     }
+  };
+  for (let i = 0; i < 26; i++) {
+    const r = 40 + R() * 90;
+    blob(R() * TILE, R() * TILE, r, r * 0.7, R() * 3, `rgba(${32 + R() * 14 | 0},${24 + R() * 10 | 0},${24 + R() * 8 | 0},${0.25 + R() * 0.2})`);
   }
-  // przyciemnienie krawędzi drogi
-  const roadFade = g.createLinearGradient(0, 0, W, 0);
-  roadFade.addColorStop(0, 'rgba(18,12,14,1)'); roadFade.addColorStop(0.3, 'rgba(18,12,14,0)');
-  roadFade.addColorStop(0.7, 'rgba(18,12,14,0)'); roadFade.addColorStop(1, 'rgba(18,12,14,1)');
-  g.fillStyle = roadFade; g.fillRect(0, 0, W, H);
+  for (let i = 0; i < 60; i++) {
+    const r = 4 + R() * 14;
+    blob(R() * TILE, R() * TILE, r, r * 0.6, R() * 3, `rgba(${14 + R() * 10 | 0},${10 + R() * 6 | 0},${11 + R() * 6 | 0},${0.35 + R() * 0.2})`);
+  }
+  // drobne kamyki
+  for (let i = 0; i < 140; i++) {
+    const v = 45 + R() * 30 | 0;
+    blob(R() * TILE, R() * TILE, 1 + R() * 2.5, 1 + R() * 1.5, R() * 3, `rgba(${v},${v - 6},${v - 6},.55)`);
+  }
+  // kępki martwej trawy
+  g.strokeStyle = 'rgba(70,55,40,.5)'; g.lineWidth = 1.2;
+  for (let i = 0; i < 40; i++) {
+    const x = 10 + R() * (TILE - 20), y = 10 + R() * (TILE - 20);
+    for (let j = 0; j < 4; j++) { g.beginPath(); g.moveTo(x, y); g.lineTo(x + (R() - 0.5) * 8, y - 4 - R() * 5); g.stroke(); }
+  }
+  groundTile = c;
+  groundPattern = null;
+}
 
-  // pęknięcia z lawą przy krawędziach
-  g.lineCap = 'round';
-  for (let i = 0; i < 9; i++) {
-    const left = i % 2 === 0;
-    let x = left ? R() * 50 : W - R() * 50, y = R() * H;
+function hash2(x, y) {
+  let h = (x * 374761393 + y * 668265263) >>> 0;
+  h = (h ^ (h >>> 13)) * 1274126177 >>> 0;
+  return (h ^ (h >>> 16)) >>> 0;
+}
+
+// dekoracje kawałka mapy (groby, krzyże, drzewa, lawa) – rysowane raz i zapamiętane
+function chunkCanvas(cx, cy) {
+  const key = cx + ',' + cy;
+  let c = chunkCache.get(key);
+  if (c) return c;
+  if (chunkCache.size > 40) chunkCache.delete(chunkCache.keys().next().value);
+  const k = chunkK, pad = 60;
+  c = document.createElement('canvas');
+  c.width = c.height = Math.round((TILE + pad * 2) * k);
+  const g = c.getContext('2d');
+  g.scale(k, k); g.translate(pad, pad);
+  const R = rng(hash2(cx, cy));
+  // pęknięcie z lawą
+  if (R() < 0.45) {
+    let x = R() * TILE, y = R() * TILE, ang = R() * TAU;
     const pts = [[x, y]];
-    for (let j = 0; j < 6; j++) { x += (left ? 1 : -1) * (8 + R() * 24); y += (R() - 0.5) * 50; pts.push([x, y]); }
-    for (const [w, col] of [[12, 'rgba(255,80,10,.08)'], [6, 'rgba(255,110,20,.25)'], [2.2, 'rgba(255,190,90,.9)']]) {
+    for (let j = 0; j < 7; j++) { ang += (R() - 0.5) * 1.2; x += Math.cos(ang) * (14 + R() * 22); y += Math.sin(ang) * (14 + R() * 22); pts.push([x, y]); }
+    g.lineCap = 'round';
+    for (const [w, col] of [[16, 'rgba(255,80,10,.07)'], [7, 'rgba(255,110,20,.22)'], [2.2, 'rgba(255,190,90,.9)']]) {
       g.strokeStyle = col; g.lineWidth = w; g.beginPath();
       pts.forEach(([px, py], j) => j ? g.lineTo(px, py) : g.moveTo(px, py)); g.stroke();
     }
   }
-  // poświata lawy z boków
-  for (const side of [0, 1]) {
-    const lg = g.createLinearGradient(side ? W : 0, 0, side ? W - 120 : 120, 0);
-    lg.addColorStop(0, 'rgba(255,90,20,.22)'); lg.addColorStop(1, 'rgba(255,90,20,0)');
-    g.fillStyle = lg; g.fillRect(0, 0, W, H);
+  // brukowany fragment drogi
+  if (R() < 0.3) {
+    const bx = R() * TILE, by = R() * TILE, rad = 50 + R() * 50;
+    for (let i = 0; i < 70; i++) {
+      const a = R() * TAU, d = Math.sqrt(R()) * rad;
+      const v = 30 + R() * 16 | 0;
+      g.fillStyle = `rgba(${v},${v - 6},${v - 4},.9)`;
+      roundRect(g, bx + Math.cos(a) * d, by + Math.sin(a) * d * 0.7, 14 + R() * 6, 9 + R() * 3, 3); g.fill();
+    }
   }
-
-  // groby, krzyże, martwe drzewa (poza drogą)
-  for (let i = 0; i < 26; i++) {
-    const left = R() < 0.5;
-    const x = left ? 20 + R() * 110 : W - 20 - R() * 110;
-    const y = 40 + R() * (H - 120);
-    if (Math.abs(x - tx) < 140 && y > ty - 140) continue;
-    const kind = R();
-    if (kind < 0.45) drawGrave(g, x, y, R);
-    else if (kind < 0.7) drawCross(g, x, y, R);
-    else drawDeadTree(g, x, y, R);
+  const n = 2 + (R() * 5 | 0);
+  for (let i = 0; i < n; i++) {
+    const x = 20 + R() * (TILE - 40), y = 20 + R() * (TILE - 40), kind = R();
+    if (kind < 0.4) drawGrave(g, x, y, R);
+    else if (kind < 0.65) drawCross(g, x, y, R);
+    else if (kind < 0.9) drawDeadTree(g, x, y, R);
+    else drawBones(g, x, y, R);
   }
-
-  // mgła u góry
-  const fog = g.createLinearGradient(0, 0, 0, H * 0.35);
-  fog.addColorStop(0, 'rgba(70,30,40,.45)'); fog.addColorStop(1, 'rgba(70,30,40,0)');
-  g.fillStyle = fog; g.fillRect(0, 0, W, H * 0.35);
-
-  // winieta
-  const vg = g.createRadialGradient(W / 2, H * 0.55, H * 0.25, W / 2, H * 0.55, H * 0.8);
-  vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.65)');
-  g.fillStyle = vg; g.fillRect(0, 0, W, H);
+  chunkCache.set(key, c);
   return c;
+}
+function drawBones(g, x, y, R) {
+  g.strokeStyle = '#8a8270'; g.lineWidth = 2.2; g.lineCap = 'round';
+  for (let i = 0; i < 3; i++) { const a = R() * TAU; g.beginPath(); g.moveTo(x + Math.cos(a) * 7, y + Math.sin(a) * 4); g.lineTo(x - Math.cos(a) * 7, y - Math.sin(a) * 4); g.stroke(); }
+  g.fillStyle = '#a8a08c'; g.beginPath(); g.arc(x + 9, y - 2, 4.5, 0, TAU); g.fill();
+  g.fillStyle = '#1a1214'; g.beginPath(); g.arc(x + 7.5, y - 2.5, 1.2, 0, TAU); g.arc(x + 10.5, y - 2.5, 1.2, 0, TAU); g.fill();
+}
+
+function drawGround(g, camX, camY, W, H) {
+  if (!groundPattern) groundPattern = g.createPattern(groundTile, 'repeat');
+  const s = 1 / chunkK;
+  g.save();
+  g.translate(-camX, -camY);
+  const m = new DOMMatrix([s, 0, 0, s, 0, 0]);
+  groundPattern.setTransform(m);
+  g.fillStyle = groundPattern;
+  g.fillRect(camX, camY, W, H);
+  const pad = 60;
+  const x0 = Math.floor((camX - pad) / TILE), x1 = Math.floor((camX + W + pad) / TILE);
+  const y0 = Math.floor((camY - pad) / TILE), y1 = Math.floor((camY + H + pad) / TILE);
+  for (let cx = x0; cx <= x1; cx++) for (let cy = y0; cy <= y1; cy++) {
+    g.drawImage(chunkCanvas(cx, cy), cx * TILE - pad, cy * TILE - pad, TILE + pad * 2, TILE + pad * 2);
+  }
+  g.restore();
+}
+
+let vigCanvas = null;
+function drawVignette(g, W, H) {
+  if (!vigCanvas || vigCanvas.h !== H) {
+    vigCanvas = document.createElement('canvas'); vigCanvas.width = 270; vigCanvas.height = Math.round(H / 2); vigCanvas.h = H;
+    const v = vigCanvas.getContext('2d'); v.scale(0.5, 0.5);
+    const vg = v.createRadialGradient(W / 2, H * 0.5, H * 0.28, W / 2, H * 0.5, H * 0.78);
+    vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.7)');
+    v.fillStyle = vg; v.fillRect(0, 0, W, H);
+  }
+  g.drawImage(vigCanvas, 0, 0, W, H);
 }
 
 function roundRect(g, x, y, w, h, r) {
@@ -131,90 +173,64 @@ function drawDeadTree(g, x, y, R) {
   branch(x, y, -Math.PI / 2 + (R() - 0.5) * 0.3, 22 + R() * 10, 6);
 }
 
-/* ---------------- Wieża (prerender) ---------------- */
-function buildTower(k) {
-  const S = 280;
-  const c = document.createElement('canvas');
-  c.width = c.height = Math.round(S * k);
+/* ---------------- Wrogowie ---------------- */
+// okres animacji (s) dla każdego typu – z niego liczymy klatki
+const ANIM_PERIOD = { skeleton: TAU / 9, spider: TAU / 16, ghoul: TAU / 5, cultist: TAU / 4, bat: TAU / 22,
+  butcher: TAU / 5, queen: TAU / 16, priest: TAU / 1.5 };
+const FACED = { skeleton: 1, ghoul: 1, butcher: 1 };
+const FRAMES = 6;
+const spriteCache = new Map();
+let spriteK = 2;
+
+function drawEnemyBody(g, e, fl, face) {
+  const s = e.boss ? e.r / 20 : 1;
+  switch (e.type) {
+    case 'skeleton': drawSkeleton(g, e, 0, fl, face); break;
+    case 'spider': drawSpider(g, e, 0, fl, 1, '#5a1018', '#8a1a26'); break;
+    case 'ghoul': drawGhoul(g, e, 0, fl, face, 1, '#5d6650', '#3f4636'); break;
+    case 'cultist': drawCultist(g, e, 0, fl, 1, '#3d2050', '#9cff5a'); break;
+    case 'bat': drawBat(g, e, 0, fl); break;
+    case 'butcher': drawGhoul(g, e, 0, fl, face, s, '#7a2a2a', '#4a1616', true); break;
+    case 'queen': drawSpider(g, e, 0, fl, s * 0.95, '#3a1050', '#7a2aa0', true); break;
+    case 'priest': drawCultist(g, e, 0, fl, s, '#1a1a2e', '#ff4a6a', true); break;
+  }
+}
+
+function enemySprite(e, fl, face) {
+  const per = ANIM_PERIOD[e.type] || 1;
+  const fr = Math.floor(((e.anim % per) / per) * FRAMES) % FRAMES;
+  const r = Math.round(e.r);
+  const key = e.type + r + (fl ? 'f' : '') + face + fr;
+  let c = spriteCache.get(key);
+  if (c) return c;
+  const half = Math.ceil(e.boss ? r * 2.2 : r * 2.6 + 16);
+  c = document.createElement('canvas');
+  c.width = c.height = Math.ceil(half * 2 * spriteK);
+  c.half = half;
   const g = c.getContext('2d');
-  g.scale(k, k); g.translate(S / 2, S / 2);
-  const oct = (r, dy = 0) => {
-    g.beginPath();
-    for (let i = 0; i < 8; i++) { const a = i * TAU / 8 + TAU / 16; const px = Math.cos(a) * r, py = Math.sin(a) * r * 0.92 + dy; i ? g.lineTo(px, py) : g.moveTo(px, py); }
-    g.closePath();
-  };
-  // cień
-  g.fillStyle = 'rgba(0,0,0,.55)'; g.beginPath(); g.ellipse(0, 26, 118, 70, 0, 0, TAU); g.fill();
-  // ściana zewnętrzna (front) + wierzch
-  g.fillStyle = '#2b2426'; oct(100, 16); g.fill();
-  g.fillStyle = '#5d5456'; oct(100); g.fill();
-  g.strokeStyle = '#1b1517'; g.lineWidth = 3; oct(100); g.stroke();
-  // dziedziniec
-  g.fillStyle = '#2a2123'; oct(76); g.fill();
-  const R = rng(77);
-  for (let i = 0; i < 70; i++) {
-    const a = R() * TAU, r = R() * 66;
-    g.fillStyle = `rgba(${70 + R() * 30 | 0},${60 + R() * 20 | 0},${60 + R() * 20 | 0},.5)`;
-    roundRect(g, Math.cos(a) * r - 5, Math.sin(a) * r * 0.9 - 3, 10, 6, 2); g.fill();
-  }
-  // blanki
-  for (let i = 0; i < 24; i++) {
-    const a = i * TAU / 24;
-    const px = Math.cos(a) * 92, py = Math.sin(a) * 92 * 0.92;
-    g.save(); g.translate(px, py); g.rotate(a);
-    g.fillStyle = '#2b2426'; g.fillRect(-5, -6, 10, 14);
-    g.fillStyle = '#7a7072'; g.fillRect(-5, -8, 10, 12);
-    g.restore();
-  }
-  // bastiony na sloty wieżyczek
-  for (const a of SLOT_ANG) {
-    const px = Math.cos(a) * SLOT_R, py = Math.sin(a) * SLOT_R * 0.92;
-    g.fillStyle = '#251f21'; g.beginPath(); g.ellipse(px, py + 8, 21, 17, 0, 0, TAU); g.fill();
-    g.fillStyle = '#6b6264'; g.beginPath(); g.ellipse(px, py, 21, 17, 0, 0, TAU); g.fill();
-    g.fillStyle = '#3b3335'; g.beginPath(); g.ellipse(px, py, 14, 11, 0, 0, TAU); g.fill();
-  }
-  // brama na dole
-  g.fillStyle = '#1a1214'; g.beginPath(); g.moveTo(-22, 108); g.lineTo(-22, 92); g.arc(0, 92, 22, Math.PI, 0); g.lineTo(22, 108); g.fill();
-  g.strokeStyle = '#4a3a2c'; g.lineWidth = 2;
-  for (let x = -16; x <= 16; x += 8) { g.beginPath(); g.moveTo(x, 78); g.lineTo(x, 108); g.stroke(); }
-  // donżon (centralna wieża)
-  g.fillStyle = '#231c1e'; roundRect(g, -40, -48, 80, 90, 8); g.fill();
-  g.fillStyle = '#6a6062'; roundRect(g, -40, -60, 80, 80, 8); g.fill();
-  g.fillStyle = '#3a3133'; roundRect(g, -30, -50, 60, 60, 5); g.fill();
-  for (let i = -36; i <= 28; i += 13) {
-    g.fillStyle = '#857b7d'; g.fillRect(i, -64, 8, 8); g.fillRect(i, 14, 8, 8);
-  }
-  // runy na platformie
-  g.strokeStyle = 'rgba(255,120,40,.35)'; g.lineWidth = 1.5;
-  g.beginPath(); g.arc(0, -20, 20, 0, TAU); g.stroke();
-  for (let i = 0; i < 6; i++) { const a = i * TAU / 6; g.beginPath(); g.moveTo(Math.cos(a) * 14, -20 + Math.sin(a) * 14); g.lineTo(Math.cos(a) * 24, -20 + Math.sin(a) * 24); g.stroke(); }
+  g.scale(spriteK, spriteK); g.translate(half, half);
+  g.fillStyle = 'rgba(0,0,0,.4)';
+  g.beginPath(); g.ellipse(0, r * (e.fly ? 1.6 : 0.8), r * 0.9, r * 0.35, 0, 0, TAU); g.fill();
+  drawEnemyBody(g, { type: e.type, r, boss: e.boss, fly: e.fly, anim: (fr + 0.5) / FRAMES * per, charge: 0 }, fl, face);
+  spriteCache.set(key, c);
   return c;
 }
 
-/* ---------------- Wrogowie ---------------- */
 function drawEnemy(g, e, t) {
   const fl = e.flash > 0;
-  const face = e.vx < 0 ? -1 : 1;
-  g.save(); g.translate(e.x, e.y);
-  // cień
-  g.fillStyle = 'rgba(0,0,0,.4)';
-  g.beginPath(); g.ellipse(0, e.r * (e.fly ? 1.6 : 0.8), e.r * 0.9, e.r * 0.35, 0, 0, TAU); g.fill();
-  // statusy pod spodem
-  if (e.slowT > 0) { g.strokeStyle = 'rgba(120,210,255,.7)'; g.lineWidth = 2; g.beginPath(); g.ellipse(0, e.r * 0.8, e.r, e.r * 0.38, 0, 0, TAU); g.stroke(); }
-  if (e.elite) { g.strokeStyle = 'rgba(255,200,60,.8)'; g.lineWidth = 2.5; g.beginPath(); g.ellipse(0, e.r * 0.8, e.r * 1.2, e.r * 0.45, 0, 0, TAU); g.stroke(); }
-  const s = e.boss ? e.r / 20 : 1;
-  switch (e.type) {
-    case 'skeleton': drawSkeleton(g, e, t, fl, face); break;
-    case 'spider': drawSpider(g, e, t, fl, 1, '#5a1018', '#8a1a26'); break;
-    case 'ghoul': drawGhoul(g, e, t, fl, face, 1, '#5d6650', '#3f4636'); break;
-    case 'cultist': drawCultist(g, e, t, fl, 1, '#3d2050', '#9cff5a'); break;
-    case 'bat': drawBat(g, e, t, fl); break;
-    case 'butcher': drawGhoul(g, e, t, fl, face, s, '#7a2a2a', '#4a1616', true); break;
-    case 'queen': drawSpider(g, e, t, fl, s * 0.95, '#3a1050', '#7a2aa0', true); break;
-    case 'priest': drawCultist(g, e, t, fl, s, '#1a1a2e', '#ff4a6a', true); break;
+  const face = FACED[e.type] ? (e.vx < 0 ? -1 : 1) : 1;
+  if (e.slowT > 0) { g.strokeStyle = 'rgba(120,210,255,.7)'; g.lineWidth = 2; g.beginPath(); g.ellipse(e.x, e.y + e.r * 0.8, e.r, e.r * 0.38, 0, 0, TAU); g.stroke(); }
+  if (e.elite) { g.strokeStyle = 'rgba(255,200,60,.8)'; g.lineWidth = 2.5; g.beginPath(); g.ellipse(e.x, e.y + e.r * 0.8, e.r * 1.2, e.r * 0.45, 0, 0, TAU); g.stroke(); }
+  const sp = enemySprite(e, fl, face);
+  g.drawImage(sp, e.x - sp.half, e.y - sp.half, sp.half * 2, sp.half * 2);
+  // ładowanie czaru u kultystów
+  if (e.charge > 0.4) {
+    const s = e.boss ? e.r / 20 : 1;
+    g.globalCompositeOperation = 'lighter';
+    g.fillStyle = e.type === 'priest' ? 'rgba(255,74,106,.5)' : 'rgba(156,255,90,.45)';
+    g.beginPath(); g.arc(e.x + 11 * s, e.y - 21 * s, 4 + e.charge * 7 * s, 0, TAU); g.fill();
+    g.globalCompositeOperation = 'source-over';
   }
-  g.restore();
-  // pasek HP
   if (!e.boss && (e.bar || e.elite) && e.hp < e.max) {
     const w = e.r * 2.2;
     g.fillStyle = 'rgba(0,0,0,.7)'; g.fillRect(e.x - w / 2, e.y - e.r - 12, w, 4);
@@ -329,21 +345,26 @@ function drawCultist(g, e, t, fl, s, robe, flame, boss) {
 function drawBat(g, e, t, fl) {
   const f = Math.sin(e.anim * 22);
   g.translate(0, -8);
-  g.fillStyle = C(fl, '#24141c');
+  g.fillStyle = C(fl, '#4a2a3e');
   for (const sd of [-1, 1]) {
     g.beginPath(); g.moveTo(0, 0);
     g.quadraticCurveTo(sd * 10, -10 - f * 6, sd * 18, -2 - f * 8);
     g.lineTo(sd * 12, 2); g.lineTo(sd * 8, 0); g.lineTo(sd * 5, 4); g.closePath(); g.fill();
   }
-  g.fillStyle = C(fl, '#3a2030'); g.beginPath(); g.ellipse(0, 1, 5, 6, 0, 0, TAU); g.fill();
+  g.fillStyle = C(fl, '#5a3448'); g.beginPath(); g.ellipse(0, 1, 5, 6, 0, 0, TAU); g.fill();
   if (!fl) glowEyes(g, [[-1.8, -1], [1.8, -1]], '#ff3a3a', 1);
 }
 
 /* ---------------- Bohater i wieżyczki ---------------- */
-function drawHero(g, x, y, ang, draw, t) {
-  g.save(); g.translate(x, y);
-  // płaszcz
-  g.fillStyle = 'rgba(0,0,0,.4)'; g.beginPath(); g.ellipse(0, 8, 13, 5, 0, 0, TAU); g.fill();
+function drawHero(g, x, y, ang, draw, t, walk = 0, hurt = 0) {
+  g.save(); g.translate(x, y); g.scale(1.3, 1.3);
+  g.fillStyle = 'rgba(0,0,0,.45)'; g.beginPath(); g.ellipse(0, 12, 14, 5, 0, 0, TAU); g.fill();
+  // nogi
+  const st = Math.sin(walk * 12) * (walk ? 4 : 0);
+  g.fillStyle = '#2a1c14';
+  g.beginPath(); g.ellipse(-5, 9 + st * 0.4, 3.5, 4.5, 0, 0, TAU); g.ellipse(5, 9 - st * 0.4, 3.5, 4.5, 0, 0, TAU); g.fill();
+  g.translate(0, -2 + Math.abs(st) * -0.25);
+  if (hurt > 0) g.globalAlpha = 0.55 + Math.sin(t * 60) * 0.35;
   g.fillStyle = '#1f3524'; g.beginPath(); g.arc(0, 0, 12, 0, TAU); g.fill();
   g.fillStyle = '#2d4a33'; g.beginPath(); g.arc(0, -2, 9, 0, TAU); g.fill();
   g.rotate(ang);
@@ -362,53 +383,6 @@ function drawHero(g, x, y, ang, draw, t) {
   g.fillStyle = '#16261a'; g.beginPath(); g.arc(0, -3, 6.5, 0, TAU); g.fill();
   g.fillStyle = '#ffb347'; g.globalAlpha = 0.9; g.beginPath(); g.arc(Math.cos(ang) * 3 - 1.5, -3 + Math.sin(ang) * 3, 1, 0, TAU); g.arc(Math.cos(ang) * 3 + 1.5, -3 + Math.sin(ang) * 3, 1, 0, TAU); g.fill(); g.globalAlpha = 1;
   g.restore();
-}
-
-function drawTurret(g, tu, x, y, t) {
-  g.save(); g.translate(x, y);
-  switch (tu.type) {
-    case 'balista': {
-      g.rotate(tu.ang);
-      g.fillStyle = '#5a3a20'; g.fillRect(-8, -5, 22, 10);
-      const k = Math.max(0, tu.fire) * 6;
-      g.strokeStyle = '#3a2614'; g.lineWidth = 4; g.lineCap = 'round';
-      g.beginPath(); g.moveTo(6, -16 + k * 0.3); g.quadraticCurveTo(12, 0, 6, 16 - k * 0.3); g.stroke();
-      g.strokeStyle = '#ddd'; g.lineWidth = 1; g.beginPath(); g.moveTo(6, -16); g.lineTo(-4 + k, 0); g.lineTo(6, 16); g.stroke();
-      if (tu.cd > 0.25) { g.fillStyle = '#9aa0a8'; g.fillRect(-4 + k, -1.5, 24, 3); }
-      break;
-    }
-    case 'miotacz': {
-      g.rotate(tu.ang);
-      g.fillStyle = '#2a2a30'; g.beginPath(); g.arc(0, 0, 10, 0, TAU); g.fill();
-      g.fillStyle = '#4a4a55'; g.fillRect(0, -5, 20, 10);
-      g.fillStyle = '#7a3a10'; g.fillRect(16, -6, 6, 12);
-      g.globalCompositeOperation = 'lighter';
-      g.fillStyle = `rgba(255,140,40,${0.4 + Math.sin(t * 20) * 0.2})`; g.beginPath(); g.arc(22, 0, 5, 0, TAU); g.fill();
-      g.globalCompositeOperation = 'source-over';
-      break;
-    }
-    case 'pily': {
-      g.rotate(t * 6);
-      g.fillStyle = '#5a5a62';
-      for (let i = 0; i < 8; i++) { g.rotate(TAU / 8); g.fillRect(6, -2.5, 7, 5); }
-      g.fillStyle = '#8a8a95'; g.beginPath(); g.arc(0, 0, 8, 0, TAU); g.fill();
-      g.fillStyle = '#2a2a30'; g.beginPath(); g.arc(0, 0, 3, 0, TAU); g.fill();
-      break;
-    }
-    case 'kociol': {
-      g.fillStyle = '#16141a'; g.beginPath(); g.ellipse(0, 2, 13, 10, 0, 0, TAU); g.fill();
-      g.fillStyle = '#2c2830'; g.beginPath(); g.ellipse(0, -1, 12, 7, 0, 0, TAU); g.fill();
-      g.fillStyle = '#0a0806'; g.beginPath(); g.ellipse(0, -1, 9, 5, 0, 0, TAU); g.fill();
-      g.globalCompositeOperation = 'lighter';
-      g.fillStyle = 'rgba(255,90,20,.35)'; g.beginPath(); g.ellipse(0, 10, 11, 3, 0, 0, TAU); g.fill();
-      g.globalCompositeOperation = 'source-over';
-      break;
-    }
-  }
-  g.restore();
-  // poziom
-  g.fillStyle = '#ffb347';
-  for (let i = 0; i < Math.min(tu.lvl, 6); i++) { g.beginPath(); g.arc(x - (Math.min(tu.lvl, 6) - 1) * 3 + i * 6, y + 16, 1.8, 0, TAU); g.fill(); }
 }
 
 function drawRaven(g, r, t) {

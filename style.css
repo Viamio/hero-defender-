@@ -37,11 +37,17 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
 #xpBar { height: 10px; border-radius: 6px; background: rgba(255,255,255,.08); border: 1px solid var(--line); overflow: hidden; }
 #xpFill { height: 100%; width: 0; background: linear-gradient(90deg, #3d8bff, #8fd3ff); box-shadow: 0 0 10px #4aa3ff; transition: width .15s; }
 #lvlTxt { margin-top: 4px; font: 700 12px 'Cinzel', serif; color: var(--muted); letter-spacing: .08em; }
+#hpRow { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+#hpRow .heart { color: #ff4a4a; font-size: 13px; text-shadow: 0 0 6px #a00; }
+#hpBar { flex: 1; max-width: 170px; height: 8px; border-radius: 5px; background: rgba(0,0,0,.55); border: 1px solid rgba(255,80,80,.35); overflow: hidden; }
+#hpFill { height: 100%; width: 100%; background: linear-gradient(90deg, #a81a24, #ff5a4a); }
+#hpTxt { font: 700 11px 'Cinzel', serif; color: #e8c8c0; }
+#hint small { font: 500 14px 'Alegreya Sans', sans-serif; color: var(--muted); }
 #pauseBtn {
   pointer-events: auto; width: 42px; height: 42px; border-radius: 10px; border: 1px solid var(--line);
   background: rgba(20,14,14,.8); color: var(--ink); font-size: 14px; letter-spacing: -2px;
 }
-#bossBar { position: absolute; left: 16px; right: 16px; top: calc(env(safe-area-inset-top) + 74px); text-align: center; }
+#bossBar { position: absolute; left: 16px; right: 16px; top: calc(env(safe-area-inset-top) + 92px); text-align: center; }
 #bossName { font: 900 14px 'Cinzel', serif; color: #ff5d5d; letter-spacing: .12em; text-shadow: 0 0 10px #a00; margin-bottom: 4px; }
 #bossHp { height: 12px; border-radius: 6px; background: rgba(0,0,0,.6); border: 1px solid rgba(255,80,80,.5); overflow: hidden; }
 #bossHpFill { height: 100%; width: 100%; background: linear-gradient(90deg, #8a0f1c, #ff3b3b); }
@@ -58,7 +64,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
 #skillRing { fill: none; stroke: var(--ember); stroke-width: 5; stroke-dasharray: 289; stroke-dashoffset: 0; stroke-linecap: round; }
 #skillBtn.cooling { filter: grayscale(.7) brightness(.7); }
 #hint {
-  position: absolute; left: 0; right: 0; top: 42%; text-align: center;
+  position: absolute; left: 0; right: 0; top: 62%; text-align: center;
   font: 700 18px 'Cinzel', serif; color: var(--ink); text-shadow: 0 2px 8px #000;
   animation: pulse 1.4s ease-in-out infinite;
 }
