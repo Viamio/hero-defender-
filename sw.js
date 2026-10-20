@@ -1,6 +1,6 @@
 // Service worker: gra działa offline po pierwszym uruchomieniu.
 // Przy każdej aktualizacji gry zwiększ numer wersji, żeby telefon pobrał nowe pliki.
-const VERSION = 'hd-v6';
+const VERSION = 'hd-v7';
 const FILES = [
   './', 'index.html', 'style.css', 'data.js', 'meta.js', 'audio.js', 'render.js', 'game.js', 'manifest.json',
   'icons/icon-192.png', 'icons/icon-512.png', 'assets/hero_archer.png',
@@ -34,8 +34,9 @@ self.addEventListener('fetch', e => {
   }
   if (url.origin !== location.origin) return;
   // pliki gry: sieć najpierw (świeża wersja), w razie braku internetu – pamięć
+  // zawsze pytaj serwer o najnowszą wersję (z pominięciem pamięci podręcznej przeglądarki)
   e.respondWith(
-    fetch(req).then(res => {
+    fetch(req, { cache: 'no-cache' }).then(res => {
       const copy = res.clone();
       caches.open(VERSION).then(c => c.put(req, copy));
       return res;
