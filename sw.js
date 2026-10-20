@@ -1,9 +1,9 @@
 // Service worker: gra działa offline po pierwszym uruchomieniu.
 // Przy każdej aktualizacji gry zwiększ numer wersji, żeby telefon pobrał nowe pliki.
-const VERSION = 'hd-v3';
+const VERSION = 'hd-v4';
 const FILES = [
   './', 'index.html', 'style.css', 'data.js', 'meta.js', 'audio.js', 'render.js', 'game.js', 'manifest.json',
-  'icons/icon-192.png', 'icons/icon-512.png',
+  'icons/icon-192.png', 'icons/icon-512.png', 'assets/hero_archer.png',
 ];
 
 self.addEventListener('install', e => {

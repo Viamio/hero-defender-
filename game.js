@@ -1188,7 +1188,9 @@ function render() {
     cam.x = -W / 2 + Math.sin(t * 0.1) * 40; cam.y = -H * 0.62;
     drawGround(ctx, cam.x, cam.y, W, H);
     ctx.save(); ctx.translate(-cam.x, -cam.y);
-    drawHero(ctx, 0, 0, -Math.PI / 2 + Math.sin(t) * 0.5, 0, t, 0, 0, classDef(SAVE.lastClass).look);
+    const mspr = 'hero_' + classDef(SAVE.lastClass).id;
+    if (IMG[mspr]) drawHeroSprite(ctx, mspr, 0, 0, Math.sin(t * 0.5) > 0 ? 0 : Math.PI, 0, t, 0, 0);
+    else drawHero(ctx, 0, 0, -Math.PI / 2 + Math.sin(t) * 0.5, 0, t, 0, 0, classDef(SAVE.lastClass).look);
     ctx.globalCompositeOperation = 'lighter';
     const f = 0.8 + Math.sin(t * 9) * 0.1;
     ctx.fillStyle = `rgba(255,120,30,${0.12 * f})`; ctx.beginPath(); ctx.arc(0, 0, 120 * f, 0, TAU); ctx.fill();
@@ -1267,7 +1269,13 @@ function render() {
   list.push(P);
   list.sort((a, b) => a.y - b.y);
   for (const e of list) {
-    if (e === P) drawHero(ctx, P.x, P.y, P.ang, P.draw, t, P.walk, P.hurtT, G.cls.look, G.rageT);
+    if (e === P) {
+      const spr = 'hero_' + G.cls.id;
+      if (IMG[spr]) {
+        if (G.rageT > 0) { ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = `rgba(255,40,20,${0.25 + Math.sin(t * 20) * 0.1})`; ctx.beginPath(); ctx.arc(P.x, P.y - 10, 34, 0, TAU); ctx.fill(); ctx.globalCompositeOperation = 'source-over'; }
+        drawHeroSprite(ctx, spr, P.x, P.y, P.ang, P.draw, t, P.walk, P.hurtT);
+      } else drawHero(ctx, P.x, P.y, P.ang, P.draw, t, P.walk, P.hurtT, G.cls.look, G.rageT);
+    }
     else {
       if (e.type === 'ally') { ctx.strokeStyle = 'rgba(120,255,120,.6)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(e.x, e.y + 10, 13, 5, 0, 0, TAU); ctx.stroke(); }
       drawEnemy(ctx, e, t);

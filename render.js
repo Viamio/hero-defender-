@@ -593,3 +593,51 @@ function drawClassProj(g, a, t) {
   }
   return false;
 }
+
+/* ---------------- Grafiki z plików (assets/) ----------------
+   Jeśli plik istnieje, gra używa obrazka; jeśli nie – rysunku z kodu. */
+const IMG = {};
+const SPRITE_FILES = ['hero_archer'];
+for (const name of SPRITE_FILES) {
+  const im = new Image();
+  im.onload = () => { IMG[name] = im; spriteVariants.clear(); };
+  im.src = 'assets/' + name + '.png';
+}
+// gotowa wersja obrazka w danym rozmiarze, z jasnym konturem (żeby było widać na ciemnym tle)
+const spriteVariants = new Map();
+function spriteVariant(name, h, k, outline) {
+  const key = name + h + k;
+  let c = spriteVariants.get(key);
+  if (c) return c;
+  const im = IMG[name], w = Math.round(im.width * h / im.height), pad = 4;
+  const W2 = Math.ceil((w + pad * 2) * k), H2 = Math.ceil((h + pad * 2) * k);
+  const base = document.createElement('canvas'); base.width = W2; base.height = H2;
+  const b = base.getContext('2d'); b.imageSmoothingQuality = 'high';
+  b.drawImage(im, pad * k, pad * k, w * k, h * k);
+  c = document.createElement('canvas'); c.width = W2; c.height = H2;
+  const g = c.getContext('2d');
+  if (outline) {
+    const sil = document.createElement('canvas'); sil.width = W2; sil.height = H2;
+    const s = sil.getContext('2d'); s.drawImage(base, 0, 0); s.globalCompositeOperation = 'source-in'; s.fillStyle = outline; s.fillRect(0, 0, W2, H2);
+    const o = 1.6 * k;
+    for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4; g.drawImage(sil, Math.cos(a) * o, Math.sin(a) * o); }
+  }
+  g.drawImage(base, 0, 0);
+  c.w = w + pad * 2; c.h = h + pad * 2;
+  spriteVariants.set(key, c);
+  return c;
+}
+// bohater z obrazka: odbicie w lewo/prawo, kołysanie przy chodzeniu, odrzut przy strzale
+function drawHeroSprite(g, name, x, y, ang, draw, t, walk, hurt) {
+  const H = 74, sp = spriteVariant(name, H, Math.min(SCALE * DPR, 3), 'rgba(255,205,140,.85)');
+  const face = Math.cos(ang) < -0.05 ? -1 : 1;
+  const bob = walk ? Math.abs(Math.sin(walk * 12)) * 3 : Math.sin(t * 2.5) * 0.8;
+  const tilt = walk ? Math.sin(walk * 12) * 0.05 : 0;
+  g.save();
+  g.fillStyle = 'rgba(0,0,0,.45)'; g.beginPath(); g.ellipse(x, y + 14, 17, 6, 0, 0, TAU); g.fill();
+  g.translate(x - face * draw * 2.5, y + 16 - bob);
+  g.rotate(tilt); g.scale(face * (1 + draw * 0.03), 1 - draw * 0.03);
+  if (hurt > 0) g.globalAlpha = 0.55 + Math.sin(t * 60) * 0.35;
+  g.drawImage(sp, -sp.w / 2, -sp.h + 4, sp.w, sp.h);
+  g.restore();
+}
