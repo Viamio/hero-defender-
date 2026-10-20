@@ -13,6 +13,26 @@ Mroczna gra roguelike na telefon. Chodzisz łucznikiem po nieskończonym cmentar
 - Czasem wypada **serce** (leczy) albo **magnes** (przyciąga wszystkie kryształy).
 - Co 5 fal do walki dołącza **boss**. Za pokonanie bossa lub elity dostajesz skrzynię z lepszą kartą.
 
+## Bohaterowie
+
+| Klasa | Atak | Umiejętność | Jak odblokować |
+|---|---|---|---|
+| 🏹 Łucznik | szybkie strzały | Deszcz Strzał | od początku |
+| 🪓 Berserker | rzucane topory, mocniejszy przy niskim HP | Szał | od początku |
+| 🔮 Mag | wybuchające kule ognia | Meteor | od początku |
+| ⚔️ Łowca Demonów | odbijające się bełty, +50% na bossy | Święta Pieczęć | pokonaj łącznie 5 bossów |
+| 💀 Nekromanta | czaszki, zabici wstają jako sojusznicy | Armia Umarłych | zabij łącznie 3000 wrogów |
+| ⚗️ Alchemik | fiolki: ogień, lód, trucizna | Wielka Mikstura | przetrwaj 20 fal |
+| ⚡ Kapłan Burzy | łańcuchowe błyskawice, ogłuszają | Burza | fala 15 Łucznikiem, Berserkerem i Magiem |
+
+## Kuźnia Dusz
+
+Po każdej grze dostajesz **dusze** 👻. W menu, w Kuźni Dusz, kupujesz za nie **stałe ulepszenia**: zdrowie, siłę, zwinność, pancerz, regenerację, szybkość ataku, zasięg, przyciąganie, mądrość, szczęście (częstsze rzadkie karty), chciwość (więcej dusz), przelosowania, Drugą Szansę (raz na grę wstajesz po śmierci) i dodatkowe miejsce na broń.
+
+## Krainy
+
+Co 10 fal zmienia się otoczenie: **Cmentarz → Piekielne Pustkowia** (wybuchowe chochliki) **→ Lodowa Krypta** (upiory spowalniają dotykiem) i dalej w kółko, coraz trudniej.
+
 ## Instalacja na telefonie
 
 Otwórz link w przeglądarce i wybierz:

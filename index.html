@@ -50,10 +50,11 @@
     <div class="menuInner">
       <div class="logoSmall">✠</div>
       <h1>Hero<br>Defender</h1>
-      <p class="tag">Przetrwaj noc, która nie ma końca.</p>
+      <p class="tag">Siedmiu bohaterów. Piętnaście broni. Noc bez końca.</p>
       <button class="btn big" id="playBtn">Graj</button>
+      <button class="btn ghost" id="shopBtn">👻 Kuźnia Dusz</button>
       <div class="stats" id="menuStats"></div>
-      <p class="tiny">Wersja prototypowa 0.3</p>
+      <p class="tiny">Wersja 1.0</p>
     </div>
   </div>
 
@@ -62,6 +63,14 @@
     <h2>Wybierz bohatera</h2>
     <div id="classList"></div>
     <button class="btn ghost" id="classBack">Wróć</button>
+  </div>
+
+  <!-- Kuźnia Dusz -->
+  <div id="shopScreen" class="screen hidden">
+    <h2>Kuźnia Dusz</h2>
+    <p class="sub">Stałe ulepszenia na każdą rozgrywkę · masz <b id="shopSouls">0</b> 👻</p>
+    <div id="shopList"></div>
+    <button class="btn ghost" id="shopBack">Wróć</button>
   </div>
 
   <!-- Wybór kart (level up / błogosławieństwo) -->
@@ -86,10 +95,12 @@
     <h2 class="blood">Poległeś</h2>
     <div id="overStats"></div>
     <button class="btn big" id="againBtn">Jeszcze raz</button>
+    <button class="btn ghost" id="overShopBtn">👻 Kuźnia Dusz</button>
     <button class="btn ghost" id="menuBtn">Menu</button>
   </div>
 </div>
 <script src="data.js"></script>
+<script src="meta.js"></script>
 <script src="audio.js"></script>
 <script src="render.js"></script>
 <script src="game.js"></script>

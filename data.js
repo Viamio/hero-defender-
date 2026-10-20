@@ -29,13 +29,13 @@ const BALANCE = {
 const RARITY = {
   names: ['POSPOLITA', 'RZADKA', 'EPICKA', 'LEGENDARNA'],
   mult: [1, 1.6, 2.4, 3.5],
-  roll(min = 0) {
+  roll(min = 0, luck = 1) {
     if (min >= 1) { // skrzynia bossa / gwarancja
       const x = Math.random() * 100;
-      return x < 6 ? 3 : x < 30 ? 2 : 1;
+      return x < 6 * luck ? 3 : x < 30 * luck ? 2 : 1;
     }
     const x = Math.random() * 100;
-    return x < 1 ? 3 : x < 6 ? 2 : x < 16 ? 1 : 0;
+    return x < 1 * luck ? 3 : x < 6 * luck ? 2 : x < 16 * luck ? 1 : 0;
   },
 };
 
@@ -47,6 +47,9 @@ const ENEMIES = {
   ghoul:    { name: 'Ghul', hp: 70, spd: 46, dmg: 12, rate: 1.2, xp: 4, r: 20, bar: true },
   cultist:  { name: 'Kultysta', hp: 26, spd: 55, dmg: 8, rate: 2.6, xp: 3, r: 14, range: 260, bar: true },
   bat:      { name: 'Nietoperz', hp: 10, spd: 128, dmg: 4, rate: 0.9, xp: 1, r: 12, fly: true },
+  // krainy
+  imp:      { name: 'Chochlik', hp: 12, spd: 125, dmg: 14, rate: 1, xp: 1.3, r: 12, kamikaze: true },
+  wraith:   { name: 'Upiór', hp: 30, spd: 78, dmg: 8, rate: 1.2, xp: 2, r: 15, fly: true, chill: true, bar: true },
 };
 
 const BOSSES = [
@@ -64,19 +67,11 @@ function waveWeights(w) {
   if (w >= 3) list.push(['ghoul', 1.5 + w * 0.12]);
   if (w >= 5) list.push(['cultist', 1.5 + w * 0.08]);
   if (w >= 7) list.push(['bat', 3]);
+  const z = Math.floor((w - 1) / 10);
+  if (z % 3 === 1 || z >= 3) list.push(['imp', 6]);
+  if (z % 3 === 2 || z >= 3) list.push(['wraith', 5]);
   return list;
 }
-
-/* ---------------- Klasy ---------------- */
-const CLASSES = [
-  { id: 'archer', name: 'Łucznik', icon: '🏹', desc: 'Szybkie, celne strzały. Umiejętność: Deszcz Strzał.', open: true },
-  { id: 'berserker', name: 'Berserker', icon: '🪓', desc: 'Rzuca ciężkimi siekierami. W przygotowaniu.', soon: true },
-  { id: 'mage', name: 'Mag', icon: '🔮', desc: 'Kule ognia na hordy. W przygotowaniu.', soon: true },
-  { id: 'hunter', name: 'Łowca Demonów', icon: '⚔️', desc: 'Odblokuj: pokonaj łącznie 5 bossów.', locked: true },
-  { id: 'necro', name: 'Nekromanta', icon: '💀', desc: 'Odblokuj: zabij łącznie 5000 wrogów.', locked: true },
-  { id: 'alch', name: 'Alchemik', icon: '⚗️', desc: 'Odblokuj: przetrwaj 25 fal w jednej grze.', locked: true },
-  { id: 'storm', name: 'Kapłan Burzy', icon: '⚡', desc: 'Odblokuj: dojdź do fali 15 każdą klasą startową.', locked: true },
-];
 
 /* ---------------- Pomocnicze ---------------- */
 const pct = v => Math.round(v * 100) + '%';
@@ -208,36 +203,36 @@ const CARDS = [
     apply: (G, r) => { G.s.wpnDmg += 0.18 * RARITY.mult[r]; } },
 
   // ---- łuk ----
-  { id: 'cieciwa', name: 'Napięta Cięciwa', icon: '🏹', kind: 'Łuk', max: 6,
-    desc: (G, r) => `<b>+${pct(0.12 * RARITY.mult[r])}</b> szybkości strzelania z łuku.`,
+  { id: 'cieciwa', name: 'Bitewny Rytm', icon: '🥁', kind: 'Atak główny', max: 6,
+    desc: (G, r) => `<b>+${pct(0.12 * RARITY.mult[r])}</b> szybkości ataku głównego.`,
     apply: (G, r) => { G.s.rateMult += 0.12 * RARITY.mult[r]; } },
-  { id: 'przebicie', name: 'Strzała Przebijająca', icon: '➶', kind: 'Łuk', max: 4,
-    desc: (G, r) => `Strzały z łuku przebijają <b>+${1 + (r >= 2 ? 1 : 0) + (r >= 3 ? 1 : 0)}</b> wroga.`,
+  { id: 'przebicie', name: 'Przebicie', icon: '➶', kind: 'Atak główny', max: 4,
+    desc: (G, r) => `Pociski ataku głównego przebijają <b>+${1 + (r >= 2 ? 1 : 0) + (r >= 3 ? 1 : 0)}</b> wroga.`,
     apply: (G, r) => { G.s.pierce += 1 + (r >= 2 ? 1 : 0) + (r >= 3 ? 1 : 0); } },
-  { id: 'wielo', name: 'Wielostrzał', icon: '🔱', kind: 'Łuk', max: 4,
-    desc: (G, r) => `Łuk wystrzeliwuje <b>+${r >= 2 ? 2 : 1}</b> strzałę naraz${r === 1 ? ', <b>+10%</b> obrażeń' : ''}.`,
+  { id: 'wielo', name: 'Wielostrzał', icon: '🔱', kind: 'Atak główny', max: 4,
+    desc: (G, r) => `Atak główny wypuszcza <b>+${r >= 2 ? 2 : 1}</b> pocisk naraz${r === 1 ? ', <b>+10%</b> obrażeń' : ''}.`,
     apply: (G, r) => { G.s.multi += r >= 2 ? 2 : 1; if (r === 1) G.s.dmgMult += 0.1; } },
-  { id: 'rykoszet', name: 'Rykoszet', icon: '↯', kind: 'Łuk', max: 3,
-    desc: (G, r) => `Strzały odbijają się do <b>+${r >= 2 ? 2 : 1}</b> kolejnego wroga.`,
+  { id: 'rykoszet', name: 'Rykoszet', icon: '↯', kind: 'Atak główny', max: 3,
+    desc: (G, r) => `Pociski odbijają się do <b>+${r >= 2 ? 2 : 1}</b> kolejnego wroga.`,
     apply: (G, r) => { G.s.ricochet += r >= 2 ? 2 : 1; } },
   { id: 'oko', name: 'Celne Oko', icon: '🎯', kind: 'Wzmocnienie', max: 5,
     desc: (G, r) => `<b>+${pct(0.07 * RARITY.mult[r])}</b> szansy na trafienie krytyczne${r >= 2 ? ', krytyki <b>+50%</b> mocniejsze' : ''}.`,
     apply: (G, r) => { G.s.crit += 0.07 * RARITY.mult[r]; if (r >= 2) G.s.critMult += 0.5; } },
-  { id: 'ostatnia', name: 'Ostatnia Strzała', icon: '🌠', kind: 'Łuk', max: 3, minR: 1,
-    desc: (G, r) => `Co <b>${Math.max(8, 20 - 4 * lvlOf(G, 'ostatnia'))}</b> strzałów wypuszczasz złotą strzałę przez cały ekran (<b>x${num(6 * RARITY.mult[r])}</b> obrażeń).`,
+  { id: 'ostatnia', name: 'Złoty Pocisk', icon: '🌠', kind: 'Atak główny', max: 3, minR: 1,
+    desc: (G, r) => `Co <b>${Math.max(8, 20 - 4 * lvlOf(G, 'ostatnia'))}</b> ataków wypuszczasz złoty pocisk przez cały ekran (<b>x${num(6 * RARITY.mult[r])}</b> obrażeń).`,
     apply: (G, r) => { G.s.bigEvery = Math.max(8, 20 - 4 * lvlOf(G, 'ostatnia')); G.s.bigMult = Math.max(G.s.bigMult, 6 * RARITY.mult[r]); } },
 
   // ---- żywioły (działają na strzały z łuku) ----
-  { id: 'ogien', name: 'Płonące Groty', icon: '🔥', kind: 'Żywioł', max: 5,
-    desc: (G, r) => `Trafieni strzałą wrogowie płoną: <b>${num(3 * RARITY.mult[r])}</b> obrażeń/s przez 3 s.`,
+  { id: 'ogien', name: 'Płomień', icon: '🔥', kind: 'Żywioł', max: 5,
+    desc: (G, r) => `Trafieni atakiem głównym płoną: <b>${num(3 * RARITY.mult[r])}</b> obrażeń/s przez 3 s.`,
     apply: (G, r) => { G.s.burn += 3 * RARITY.mult[r]; } },
-  { id: 'lod', name: 'Lodowe Groty', icon: '❄️', kind: 'Żywioł', max: 4,
-    desc: (G, r) => `Trafieni strzałą wrogowie są spowolnieni o <b>${pct(Math.min(0.65, G.s.slow + 0.15 * RARITY.mult[r]) - G.s.slow)}</b>.`,
+  { id: 'lod', name: 'Mróz', icon: '❄️', kind: 'Żywioł', max: 4,
+    desc: (G, r) => `Trafieni atakiem głównym są spowolnieni o <b>${pct(Math.min(0.65, G.s.slow + 0.15 * RARITY.mult[r]) - G.s.slow)}</b>.`,
     apply: (G, r) => { G.s.slow = Math.min(0.65, G.s.slow + 0.15 * RARITY.mult[r]); } },
   { id: 'jad', name: 'Jad', icon: '🧪', kind: 'Żywioł', max: 5,
-    desc: (G, r) => `Strzały zatruwają. Każda warstwa: <b>${num(1.2 * RARITY.mult[r])}</b> obr./s, kumuluje się do 8 razy.`,
+    desc: (G, r) => `Atak główny zatruwa. Każda warstwa: <b>${num(1.2 * RARITY.mult[r])}</b> obr./s, kumuluje się do 8 razy.`,
     apply: (G, r) => { G.s.poison += 1.2 * RARITY.mult[r]; } },
-  { id: 'piorun', name: 'Strzała Łańcuchowa', icon: '🌩️', kind: 'Żywioł', max: 5,
+  { id: 'piorun', name: 'Łańcuch Piorunów', icon: '🌩️', kind: 'Żywioł', max: 5,
     desc: (G, r) => `<b>${pct(0.12 * RARITY.mult[r])}</b> szansy, że trafienie wyzwoli piorun skaczący po <b>${r >= 2 ? 4 : 3}</b> wrogach.`,
     apply: (G, r) => { G.s.chain += 0.12 * RARITY.mult[r]; G.s.chainJumps = Math.max(G.s.chainJumps, r >= 2 ? 4 : 3); } },
 
@@ -289,9 +284,9 @@ const CARDS = [
     req: G => (lvlOf(G, 'piorun') || wLvl(G, 'burzak')) && (lvlOf(G, 'ogien') || wLvl(G, 'miotacz')),
     desc: () => `Pioruny podpalają, a trafiając płonącego wroga wywołują wybuch. <b>+50%</b> obrażeń piorunów.`,
     apply: G => { G.f.burza = true; } },
-  { id: 'grad', name: 'Grad Strzał', icon: '🌧️', kind: 'Synergia', max: 1, syn: true,
+  { id: 'grad', name: 'Grad Pocisków', icon: '🌧️', kind: 'Synergia', max: 1, syn: true,
     req: G => G.s.multi >= 3 && lvlOf(G, 'rykoszet'),
-    desc: () => `Każda strzała ma <b>30%</b> szansy rozszczepić się na 2 przy trafieniu.`,
+    desc: () => `Każdy pocisk ma <b>30%</b> szansy rozszczepić się na 2 przy trafieniu.`,
     apply: G => { G.f.grad = true; } },
   { id: 'krwawy', name: 'Krwawy Pakt', icon: '❣️', kind: 'Synergia', max: 1, syn: true,
     req: G => lvlOf(G, 'ofiara') && lvlOf(G, 'dusze'),
@@ -313,7 +308,7 @@ const CARDS = [
     apply: G => { G.f.upiory = true; } },
   { id: 'smok', name: 'Smocze Gardło', icon: '🐉', kind: 'Ewolucja', max: 1, evo: true, minR: 3,
     req: G => wLvl(G, 'miotacz') >= 6 && lvlOf(G, 'ogien'),
-    desc: () => `Miotacz + Płonące Groty: płomień sięga <b>dwa razy dalej</b>, a podpalenie jest <b>x2</b>.`,
+    desc: () => `Miotacz + Płomień: płomień sięga <b>dwa razy dalej</b>, a podpalenie jest <b>x2</b>.`,
     apply: G => { G.f.smok = true; } },
   { id: 'taniec', name: 'Taniec Ostrzy', icon: '🌀', kind: 'Ewolucja', max: 1, evo: true, minR: 3,
     req: G => wLvl(G, 'pily') >= 6 && lvlOf(G, 'oko'),
@@ -344,8 +339,8 @@ const CARDS = [
   { id: 'gniew', name: 'Gniew Niebios', icon: '🌩️', kind: 'Legenda', max: 1, minR: 3,
     desc: () => `Co 4 s z nieba bije <b>6 piorunów</b> w losowych wrogów (x6 obrażeń).`,
     apply: G => { G.f.gniew = true; G.gniewT = 1; } },
-  { id: 'mistrz', name: 'Mistrz Łuku', icon: '🏆', kind: 'Legenda', max: 1, minR: 3,
-    desc: () => `<b>+2</b> strzały naraz i <b>+50%</b> szybkości strzelania.`,
+  { id: 'mistrz', name: 'Mistrz Bitwy', icon: '🏆', kind: 'Legenda', max: 1, minR: 3,
+    desc: () => `Atak główny: <b>+2</b> pociski naraz i <b>+50%</b> szybkości.`,
     apply: G => { G.s.multi += 2; G.s.rateMult += 0.5; } },
   { id: 'feniks', name: 'Serce Feniksa', icon: '🔥', kind: 'Legenda', max: 1, minR: 3,
     desc: () => `Gdy polegniesz, <b>odradzasz się raz</b> z 60% HP i spalasz wszystko wokół.`,
