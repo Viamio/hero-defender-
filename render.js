@@ -401,6 +401,25 @@ function drawRaven(g, r, t) {
 /* ---------------- Pociski ---------------- */
 function drawArrow(g, a) {
   const ang = Math.atan2(a.vy, a.vx);
+  if (a.kind === 'bullet' || a.kind === 'pellet') {
+    const L = a.kind === 'bullet' ? 30 : 12;
+    g.save(); g.translate(a.x, a.y); g.rotate(ang);
+    g.globalCompositeOperation = 'lighter';
+    const tr = g.createLinearGradient(-L, 0, 0, 0); tr.addColorStop(0, 'rgba(0,0,0,0)'); tr.addColorStop(1, a.glow);
+    g.strokeStyle = tr; g.lineWidth = a.kind === 'bullet' ? 4 : 3; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(-L, 0); g.lineTo(0, 0); g.stroke();
+    g.fillStyle = '#fff6d0'; g.beginPath(); g.arc(0, 0, a.kind === 'bullet' ? 2.6 : 2.2, 0, TAU); g.fill();
+    g.globalCompositeOperation = 'source-over';
+    g.restore(); return;
+  }
+  if (a.kind === 'knife') {
+    g.save(); g.translate(a.x, a.y); g.rotate(ang);
+    g.globalCompositeOperation = 'lighter'; g.strokeStyle = 'rgba(200,220,255,.25)'; g.lineWidth = 5; g.beginPath(); g.moveTo(-26, 0); g.lineTo(-6, 0); g.stroke(); g.globalCompositeOperation = 'source-over';
+    g.fillStyle = '#3a2418'; g.fillRect(-9, -2, 7, 4);
+    g.fillStyle = '#8a7a50'; g.fillRect(-3, -3.5, 2, 7);
+    g.fillStyle = '#dde2ea'; g.beginPath(); g.moveTo(-1, -2.5); g.lineTo(11, 0); g.lineTo(-1, 2.5); g.closePath(); g.fill();
+    g.restore(); return;
+  }
   const len = a.big ? 44 : a.bolt ? 30 : 22;
   g.save(); g.translate(a.x, a.y); g.rotate(ang);
   // smuga
@@ -423,4 +442,67 @@ function drawArrow(g, a) {
     if (!a.bolt) { g.fillStyle = a.big ? '#ffcf4a' : '#c23030'; g.fillRect(-len, -3, 5, 2); g.fillRect(-len, 1, 5, 2); }
   }
   g.restore();
+}
+
+/* ---------------- Efekty broni ---------------- */
+function drawAxeHead(g, x, y, ang, s, col) {
+  g.save(); g.translate(x, y); g.rotate(ang); g.scale(s, s);
+  g.strokeStyle = '#5a3a20'; g.lineWidth = 3.5; g.lineCap = 'round';
+  g.beginPath(); g.moveTo(-14, 0); g.lineTo(12, 0); g.stroke();
+  g.fillStyle = col || '#c8ccd4';
+  g.beginPath(); g.moveTo(6, -2); g.quadraticCurveTo(10, -13, 18, -12); g.quadraticCurveTo(15, 0, 18, 12); g.quadraticCurveTo(10, 13, 6, 2); g.closePath(); g.fill();
+  g.fillStyle = 'rgba(255,255,255,.6)'; g.beginPath(); g.moveTo(16, -10); g.quadraticCurveTo(13.5, 0, 16, 10); g.lineTo(17.5, 10); g.quadraticCurveTo(15, 0, 17.5, -10); g.fill();
+  g.restore();
+}
+
+function drawWeaponFx(g, t) {
+  const P = G.p;
+  // aura
+  for (const w of G.weapons) if (w.id === 'aura' && w.R) {
+    const R = w.R * (1 + Math.sin(t * 4) * 0.03);
+    g.globalCompositeOperation = 'lighter';
+    const gr = g.createRadialGradient(P.x, P.y, R * 0.2, P.x, P.y, R);
+    gr.addColorStop(0, 'rgba(255,220,120,0)'); gr.addColorStop(0.75, G.f.swietosc ? 'rgba(255,255,200,.10)' : 'rgba(255,200,90,.07)'); gr.addColorStop(1, G.f.swietosc ? 'rgba(255,255,210,.28)' : 'rgba(255,190,80,.22)');
+    g.fillStyle = gr; g.beginPath(); g.arc(P.x, P.y, R, 0, TAU); g.fill();
+    g.strokeStyle = 'rgba(255,220,140,.5)'; g.lineWidth = 2;
+    g.setLineDash([10, 12]); g.lineDashOffset = -t * 30;
+    g.beginPath(); g.arc(P.x, P.y, R, 0, TAU); g.stroke();
+    g.setLineDash([]);
+    g.globalCompositeOperation = 'source-over';
+  }
+  // cięcia toporem / kosą
+  for (const s of G.slashes) {
+    const pr = Math.min(1, s.t / (s.max * 0.55)), a = 1 - s.t / s.max;
+    const full = s.arc >= TAU - 0.01;
+    const a0 = full ? s.ang : s.ang - s.arc / 2, a1 = a0 + s.arc * pr;
+    const R = s.R, inner = R * (s.kind === 'kosa' ? 0.72 : 0.45);
+    g.globalAlpha = a * 0.85;
+    g.globalCompositeOperation = 'lighter';
+    const gr = g.createRadialGradient(P.x, P.y, inner, P.x, P.y, R);
+    gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(0.8, s.col); gr.addColorStop(1, 'rgba(255,255,255,.9)');
+    g.fillStyle = gr;
+    g.beginPath(); g.arc(P.x, P.y, R, a0, a1); g.arc(P.x, P.y, inner, a1, a0, true); g.closePath(); g.fill();
+    g.globalCompositeOperation = 'source-over';
+    g.globalAlpha = Math.min(1, a * 1.6);
+    if (s.kind === 'topor') drawAxeHead(g, P.x + Math.cos(a1) * R * 0.78, P.y + Math.sin(a1) * R * 0.78, a1 + Math.PI / 2, 1.2);
+    else if (s.kind === 'kosa') {
+      const x = P.x + Math.cos(a1) * R * 0.86, y = P.y + Math.sin(a1) * R * 0.86;
+      g.save(); g.translate(x, y); g.rotate(a1 + Math.PI / 2);
+      g.fillStyle = '#d8d0ff'; g.beginPath(); g.moveTo(-4, 0); g.quadraticCurveTo(10, -26, 34, -18); g.quadraticCurveTo(14, -12, 4, 6); g.closePath(); g.fill();
+      g.restore();
+      g.strokeStyle = '#3a2a1a'; g.lineWidth = 4; g.beginPath(); g.moveTo(P.x, P.y); g.lineTo(x, y); g.stroke();
+    }
+    g.globalAlpha = 1;
+  }
+  // topory-bumerangi
+  for (const b of G.boomers) {
+    g.fillStyle = 'rgba(0,0,0,.3)'; g.beginPath(); g.ellipse(b.x, b.y + 16, 12 * b.size, 4, 0, 0, TAU); g.fill();
+    drawAxeHead(g, b.x, b.y, b.t * 18, b.size, G.f.berserk ? '#ff8a6a' : '#c8ccd4');
+  }
+  // błysk lufy arkebuza
+  for (const w of G.weapons) if (w.id === 'arkebuz' && w.flashT > 0) {
+    g.save(); g.translate(P.x, P.y); g.rotate(w.flashA);
+    g.fillStyle = '#3a2a1e'; g.fillRect(8, -2.5, 22, 5); g.fillStyle = '#6a6a72'; g.fillRect(26, -2, 8, 4);
+    g.restore();
+  }
 }

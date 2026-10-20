@@ -60,6 +60,10 @@ const SFX = (() => {
     },
     wave() { if (ok('wave', 500)) { tone(196, 0.5, 'sine', 0.12, 1); tone(294, 0.6, 'sine', 0.08, 1, 0.12); } },
     rain() { if (ok('rain', 300)) for (let i = 0; i < 6; i++) noise(0.08, 0.08, 'highpass', 3000, 0.7, i * 0.08); },
+    gun() { if (ok('gun', 70)) { noise(0.12, 0.28, 'lowpass', 1800, 0.7); tone(140, 0.12, 'square', 0.08, 0.4); noise(0.05, 0.15, 'highpass', 3000, 0.7); } },
+    shotgun() { if (ok('shotgun', 150)) { noise(0.25, 0.38, 'lowpass', 1200, 0.6); tone(90, 0.2, 'sine', 0.3, 0.4); } },
+    swing() { if (ok('swing', 90)) { noise(0.16, 0.14, 'bandpass', 700, 1.2); noise(0.1, 0.08, 'bandpass', 1600, 2, 0.04); } },
+    throwK() { if (ok('throwK', 70)) noise(0.07, 0.07, 'bandpass', 2600, 2.5); },
     die() { if (!ok('die', 1000)) return; tone(110, 1.6, 'sawtooth', 0.15, 0.3); noise(1.2, 0.3, 'lowpass', 500); },
   };
 })();
