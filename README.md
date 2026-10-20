@@ -1,8 +1,8 @@
-# Ostatnia Wieża
+# Hero Defender
 
 Mroczna gra roguelike na telefon. Chodzisz łucznikiem po nieskończonym cmentarzysku, a on sam atakuje najbliższe potwory. Przetrwaj jak najwięcej fal.
 
-**Zagraj:** https://viamio.github.io/Wie-a-niesko-czono-ci-/
+**Zagraj:** https://viamio.github.io/hero-defender-/
 
 ## Jak grać
 
