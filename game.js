@@ -1189,7 +1189,7 @@ function render() {
     drawGround(ctx, cam.x, cam.y, W, H);
     ctx.save(); ctx.translate(-cam.x, -cam.y);
     const mspr = 'hero_' + classDef(SAVE.lastClass).id;
-    if (IMG[mspr]) drawHeroSprite(ctx, mspr, 0, 0, Math.sin(t * 0.5) > 0 ? 0 : Math.PI, 0, t, 0, 0);
+    if (IMG[mspr]) drawHeroSprite(ctx, mspr, 0, 0, -Math.PI / 2 + Math.sin(t * 0.7) * 0.6, 0, t, 0, 0);
     else drawHero(ctx, 0, 0, -Math.PI / 2 + Math.sin(t) * 0.5, 0, t, 0, 0, classDef(SAVE.lastClass).look);
     ctx.globalCompositeOperation = 'lighter';
     const f = 0.8 + Math.sin(t * 9) * 0.1;

@@ -627,17 +627,18 @@ function spriteVariant(name, h, k, outline) {
   spriteVariants.set(key, c);
   return c;
 }
-// bohater z obrazka: odbicie w lewo/prawo, kołysanie przy chodzeniu, odrzut przy strzale
+// bohater z obrazka (widok z góry, obrazek patrzy w dół): obrót w stronę celu,
+// kołysanie przy chodzeniu, odrzut przy strzale
 function drawHeroSprite(g, name, x, y, ang, draw, t, walk, hurt) {
-  const H = 74, sp = spriteVariant(name, H, Math.min(SCALE * DPR, 3), 'rgba(255,205,140,.85)');
-  const face = Math.cos(ang) < -0.05 ? -1 : 1;
-  const bob = walk ? Math.abs(Math.sin(walk * 12)) * 3 : Math.sin(t * 2.5) * 0.8;
-  const tilt = walk ? Math.sin(walk * 12) * 0.05 : 0;
+  const H = 74, sp = spriteVariant(name, H, Math.min(SCALE * DPR, 3), 'rgba(255,205,140,.8)');
+  const sway = walk ? Math.sin(walk * 12) * 0.07 : Math.sin(t * 2) * 0.02;
+  const pulse = walk ? 1 + Math.abs(Math.sin(walk * 12)) * 0.04 : 1 + Math.sin(t * 2.5) * 0.012;
   g.save();
-  g.fillStyle = 'rgba(0,0,0,.45)'; g.beginPath(); g.ellipse(x, y + 14, 17, 6, 0, 0, TAU); g.fill();
-  g.translate(x - face * draw * 2.5, y + 16 - bob);
-  g.rotate(tilt); g.scale(face * (1 + draw * 0.03), 1 - draw * 0.03);
+  g.fillStyle = 'rgba(0,0,0,.4)'; g.beginPath(); g.ellipse(x + 3, y + 6, 26, 20, 0, 0, TAU); g.fill();
+  g.translate(x - Math.cos(ang) * draw * 3, y - Math.sin(ang) * draw * 3);
+  g.rotate(ang - Math.PI / 2 + sway);
+  g.scale(pulse, pulse);
   if (hurt > 0) g.globalAlpha = 0.55 + Math.sin(t * 60) * 0.35;
-  g.drawImage(sp, -sp.w / 2, -sp.h + 4, sp.w, sp.h);
+  g.drawImage(sp, -sp.w / 2, -sp.h * 0.42, sp.w, sp.h);
   g.restore();
 }
