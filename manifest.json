@@ -1,17 +1,33 @@
 {
+  "id": "./?app=wieza2",
   "name": "Ostatnia Wieża",
   "short_name": "Ostatnia Wieża",
-  "description": "Mroczna gra roguelike: broń wieży przed nieskończonymi falami potworów.",
+  "description": "Mroczna gra roguelike: przetrwaj nieskończone fale potworów.",
   "lang": "pl",
-  "start_url": "./",
+  "start_url": "./?app=wieza2",
   "scope": "./",
   "display": "fullscreen",
   "orientation": "portrait",
   "background_color": "#0d0a0c",
   "theme_color": "#0d0a0c",
   "icons": [
-    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }
