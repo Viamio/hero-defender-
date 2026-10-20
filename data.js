@@ -16,12 +16,14 @@ const BALANCE = {
   regenPerWave: 0.05,   // leczenie bohatera na start fali (ułamek max HP)
   rerolls: 2,
   pityLevels: 12,       // po tylu levelach bez rzadkiej karty – gwarancja
-  maxEnemies: 260,
+  maxEnemies: 380,
+  spawnX: 2,            // mnożnik liczby potworów (tryb ciężki: x2)
+  enemyXp: 0.65,        // doświadczenie z jednego potwora (mniej, bo jest ich 2x więcej)
   // jak rośnie trudność
   hpMult: w => 1 + 0.16 * (w - 1) + 0.012 * (w - 1) * (w - 1),
   dmgMult: w => 1 + 0.06 * (w - 1),
   xpMult: w => 1 + 0.04 * (w - 1),
-  waveCount: w => Math.min(170, Math.round(22 + w * 3.6 + w * w * 0.06)),
+  waveCount: w => Math.min(320, Math.round((22 + w * 3.6 + w * w * 0.06) * BALANCE.spawnX)),
   xpNeed: L => Math.round(2 + 1.4 * L + 0.28 * Math.pow(L, 1.9)),
 };
 

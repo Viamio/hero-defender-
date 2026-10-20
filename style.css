@@ -212,3 +212,7 @@ h2.blood { color: #ff4a4a; text-shadow: 0 0 18px rgba(200,0,0,.7); font-size: 32
 .shopItem.maxed .sBuy { background: rgba(60,46,12,.9); color: var(--legend); border-color: var(--legend); }
 .unlockMsg { color: #7ee07e; font-size: 16px; }
 .unlockMsg b { color: #fff; }
+
+#speedBtn { pointer-events: auto; width: 42px; height: 42px; border-radius: 10px; border: 1px solid var(--line);
+  background: rgba(20,14,14,.8); color: var(--ink); font: 900 15px 'Cinzel', serif; }
+#speedBtn.on { color: #1a0c06; background: linear-gradient(180deg, #ffbe6a, #e0601a); border-color: rgba(255,170,90,.8); box-shadow: 0 0 12px rgba(255,120,30,.5); }

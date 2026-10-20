@@ -191,7 +191,7 @@ function spawnEnemy(type, opts = {}) {
   if (isBoss) hp *= 1 + G.bossIdx * 0.25;
   const e = {
     type, x: p.x, y: p.y, vx: 0, vy: 0, r: D.r, hp, max: hp, spd: D.spd * rand(0.9, 1.1),
-    dmg: D.dmg * BALANCE.dmgMult(w), rate: D.rate, atk: 0, xp: D.xp * BALANCE.xpMult(w),
+    dmg: D.dmg * BALANCE.dmgMult(w), rate: D.rate, atk: 0, xp: D.xp * BALANCE.xpMult(w) * (isBoss ? 1 : BALANCE.enemyXp),
     range: D.range || 0, fly: !!D.fly, bar: !!D.bar, anim: Math.random() * 10, flash: 0,
     burnT: 0, burnDps: 0, poisonS: 0, poisonT: 0, slowT: 0, slowAmt: 0, dotT: 0, acc: 0, accT: 0,
     boss: isBoss, kamikaze: !!D.kamikaze, chill: !!D.chill, stunT: 0, special: D.special || 0, specT: (D.special || 0) * 0.6, name: D.name,
@@ -1434,7 +1434,10 @@ let lastT = 0;
 function loop(now) {
   const dt = Math.min(0.05, (now - lastT) / 1000 || 0);
   lastT = now;
-  if (G && (!G.modal || G.over)) update(dt);
+  if (G && (!G.modal || G.over)) {
+    update(dt);
+    if (SAVE.speed2 && G && !G.modal && !G.over) update(dt);   // tryb x2: druga klatka logiki
+  }
   render();
   if (G) updateHudFast();
   requestAnimationFrame(loop);
@@ -1580,6 +1583,9 @@ function openPause() {
   showScreen('pauseScreen');
 }
 $('pauseBtn').addEventListener('click', openPause);
+function updateSpeedBtn() { const b = $('speedBtn'); b.textContent = SAVE.speed2 ? '×2' : '×1'; b.classList.toggle('on', !!SAVE.speed2); }
+$('speedBtn').addEventListener('click', () => { SAVE.speed2 = !SAVE.speed2; storeSave(); updateSpeedBtn(); SFX.pick(0); });
+updateSpeedBtn();
 $('resumeBtn').addEventListener('click', () => { if (G) { G.modal = null; hideScreens(); } });
 $('soundBtn').addEventListener('click', () => {
   SFX.on = !SFX.on; SAVE.sound = SFX.on; storeSave();
@@ -1598,7 +1604,7 @@ function gameOver(quit) {
   G.shake = 18;
   const lockedBefore = CLASS_DEFS.filter(c => !isUnlocked(c));
   const greed = 1 + 0.1 * shopLvl('greed');
-  const souls = Math.floor((G.kills / 8 + G.wave * 3 + G.bossKills * 10) * greed);
+  const souls = Math.floor((G.kills / 14 + G.wave * 3 + G.bossKills * 10) * greed);
   const best = SAVE.best || { wave: 0, kills: 0, level: 0 };
   const rec = G.wave > best.wave;
   SAVE.best = { wave: Math.max(best.wave, G.wave), kills: Math.max(best.kills, G.kills), level: Math.max(best.level || 0, G.level) };
